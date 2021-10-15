@@ -49,7 +49,7 @@ static int led = 0;
 static bool Lora_is_busy = false;
 static int temp = 0;
 static int humi = 0;
-static int switch_UI = 0;
+static int switch_UI = -1;
 
 float Stop;
 float Turn;
@@ -91,7 +91,7 @@ E5_Module_Cmd_t E5_Module_Cmd[] = {
   {"+AT: OK", 1000, "AT\r\n"},
   {"+ID: AppEui", 1000, "AT+ID\r\n"},
   {"+MODE", 1000, "AT+MODE=LWOTAA\r\n"},
-  {"+DR", 1000, "AT+DR=US915\r\n"},
+  {"+DR", 1000, "AT+DR=EU868\r\n"},
   {"CH", 1000, "AT+CH=NUM,0-2\r\n"},
   {"+KEY: APPKEY", 1000, "AT+KEY=APPKEY,\"2B7E151628AED2A6ABF7158809CF4F3C\"\r\n"},
   {"+CLASS", 1000, "AT+CLASS=A\r\n"},
@@ -374,8 +374,8 @@ void setup(void) {
   tft.init();
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
-  pinMode(WIO_5S_LEFT, INPUT_PULLUP);
-  pinMode(WIO_5S_RIGHT, INPUT_PULLUP);
+  pinMode(WIO_5S_PRESS, INPUT_PULLUP);
+  // pinMode(WIO_5S_RIGHT, INPUT_PULLUP);
   lis.begin(Wire1);
   Serial.println("starting 2...");
   lis.setOutputDataRate(LIS3DHTR_DATARATE_100HZ); // Setting output data rage to 25Hz, can be set up tp 5kHz
@@ -390,6 +390,8 @@ void setup(void) {
 
   Serial.println("Init finish");
 
+
+
 }
 
 
@@ -399,37 +401,34 @@ void loop(void) {
   long sTime = millis();
   float buffer[EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE] = {0};
 
-  if (switch_UI == 0) {
-    refreshGpsInfo();
-  }
 
   if (switch_UI == -1) {
     display_EVI();
   }
 
-
-  if (digitalRead(WIO_5S_LEFT) == LOW) {
-    tft.fillScreen(TFT_BLACK);
-    init_ui = 0;
-    switch_UI = -1;
-
+  if (switch_UI == 0) {
+    refreshGpsInfo();
   }
 
-  if (digitalRead(WIO_5S_RIGHT) == LOW) {
+
+  // if (digitalRead(WIO_5S_LEFT) == LOW) {
+  //   tft.fillScreen(TFT_BLACK);
+  //   init_ui = 0;
+  //   switch_UI = -1;
+  // }
+
+  if (digitalRead(WIO_5S_PRESS) == LOW) {
     tft.fillScreen(TFT_BLACK);
     init_ui = 0;
     switch_UI = 0;
   }
-  //  GpsSerialInit();
+
   GetGpsInfoPolling();
   UpdateGpsInfo();
-//  Serial.println(N_lat);
-//  Serial.println(N_date);
-
 
   ////////////////////////////////////////////////////////////////////
 
-  if (tTime > 10 * 1000) {
+  if (tTime > 10 * 1000 && switch_UI == 0) {
     tTime = 0;
     delay(500);
     Serial.println("starting sampling...");
